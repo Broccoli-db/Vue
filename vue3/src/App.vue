@@ -1,42 +1,48 @@
 <template>
-  <div>App</div>
-  <div>{{ obj.y }}</div>
-  <button
-    @click="
-      () => {
-        obj.y = 20;
-      }
-    "
-  ></button>
+  <div>
+    <div>X:{{ x }}</div>
+    <div>Y:{{ y }}</div>
+    <!-- <div>Z:{{ z }}</div> -->
+    <div>a:{{ a }}</div>
+    <button @click="x++">x++</button>
+    <button @click="a++">a++</button>
+    <button @click="hndleClick">z++</button>
+  </div>
 </template>
 
 <script>
 import { defineComponent } from "vue";
 
 export default defineComponent({
-  name: "App",
+  name: "",
 });
 </script>
 <script setup>
-import { ref, reactive, onMounted } from "vue";
-let obj = {
-  x: 1,
-  y: 10,
-};
-let props = { ...obj };
-Object.defineProperty(obj, "y", {
-  get() {
-    // 当访问属性y的时候触发get函数
-    // get函数返回的是什么，y的值就是什么
-    // 不能直接返回obj.y，否则会导致死递归
-    return props.y;
-  },
-  set(val) {
-    // 当修改属性y的时候，会触发set函数
-    props.y = val;
-  },
+import { ref, reactive, onMounted, computed } from "vue";
+const x = ref(0);
+const y = ref(1);
+const a = ref(0);
+// const z = () => {
+//   console.log(123);
+//   return x.value + y.value;
+// };
+const z = computed(() => {
+  console.log(123);
+  return x.value + y.value;
 });
-console.log(obj);
+// const z = computed({
+//   get() {
+//     console.log(123);
+//     return x.value + y.value;
+//   },
+//   set(val) {
+//     console.log(val);
+//     x.value = val - 1;
+//   },
+// });
+// const hndleClick = () => {
+//   z.value++;
+// };
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss" ></style>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <script>
+        let data = {
+            name: "张三",
+            age: 18,
+            sex: "男",
+            hobby: "篮球",
+            address: {
+                city: "北京",
+                province: "北京",
+                country: "中国"
+            },
+            obj: {
+                name: "李四",
+                age: 19,
+                sex: "女",
+                hobby: "足球",
+                address: {
+                    city: "上海",
+                    province: "上海",
+                    country: "中国"
+                }
+            },
+            frozen: Object.freeze({
+                name: "王五",
+                age: 20,
+                sex: "男",
+                hobby: "羽毛球",
+                address: {
+                    city: "广州",
+                    province: "广东",
+                    country: "中国"
+                }
+            }),
+            fn: function () {
+                console.log("fn");
+            },
+            arr: [1, 2, 3, 4, 5],
+            arr2: [1, 2, 3, 4, 5, 6, 
+                    [20, 30], 
+                    { 
+                        name: "赵六", 
+                        age: 21, 
+                        sex: "女", 
+                        hobby: "乒乓球", 
+                        address: {
+                            city: "深圳", 
+                            province: "广东", 
+                            country: "中国" 
+                        } 
+                    },
+                ]
+        }
+        // 视图更新
+        const compiler = ()=>{
+            console.log("视图更新");
+        }
+
+        // 数据进行响应式处理方法
+        const observer =(obj)=>{
+            // 判断是否为对象
+            let isObj = Object.prototype.toString.call(obj) === '[object Object]';
+            // 判断是否为数组
+            let isArr = Object.prototype.toString.call(obj) === '[object Array]';
+            // 不是对象也不是数组，直接返回
+            if(!isObj && !isArr) return obj;
+            // 数组处理：重新原型指向
+            if(isArr){
+                observerArr(obj);
+                // 递归处理，深层次处理
+                obj.forEach((item,index)=> observer(item))
+                return obj
+            }
+            // 对象处理：数据劫持
+            let keys = Object.keys(obj);
+            // 代理对象
+            let proxy={...obj}
+            keys.forEach((key)=>{
+                observerObj(obj,key,obj[key],proxy)
+                // 递归处理，深层次处理
+                observer(obj[key])
+            })
+            return obj
+        }
+       
+        //重写的原型对象
+        // 添加不可枚举属性，指向原数组
+        const def = (obj,key,value,enumerable)=>{
+            Object.defineProperty(obj,key,{
+                value,
+                configurable:true,
+                enumerable:!!enumerable,
+                writable:true
+            })
+        }
+        let proto={}
+        let arrMethods = ['push','pop','shift','unshift','splice','reverse','sort'];
+        arrMethods.forEach(name=>{
+            def(proto,name,function mutator(...args){
+              let res = Array.prototype[name].apply(this,args);
+              let inserted;
+              switch(name){
+                case 'push':
+                case 'unshift':
+                  inserted = args;
+                  break;
+                case 'splice':
+                  inserted = args.slice(2);
+                  break;
+              }
+              if(Array.isArray(inserted)){
+                inserted.forEach(item=>{
+                  observer(item)
+                })
+              }
+              compiler()
+              return res
+            })
+        })
+        Object.setPrototypeOf(proto,Array.prototype);
+        // 数组处理的方法
+        const observerArr = (arr)=>{
+            //重新指定原型指向
+            Object.setPrototypeOf(arr,proto);
+        }
+       
+       
+        // 对象的数据劫持
+        const observerObj = (obj,key,val,proxy)=>{
+            // 如果对象是被冻结的，则直接返回
+            if(Object.isFrozen(obj)) return;
+            Object.defineProperty(obj,key,{
+                get(){
+                    return proxy[key]
+                },
+                set(newValue){
+                    if(newValue === proxy[key]) return;
+                    proxy[key]=observer(newValue);//对于新设置的值进行数据劫持
+                    compiler()
+                }
+            })
+        }
+        observer(data)
+    </script>
+</body>
+
+</html>
