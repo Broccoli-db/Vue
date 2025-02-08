@@ -472,3 +472,426 @@ computed计算属性：传一个函数只能读，传一个对象,可读可写
 在new Vue的阶段计算属性是不会执行的，只有当用计算属性的值时，才会执行
 ```
 
+##### 十五，watch监听器
+
+```js
+当监听的值发生改变，会把对应的函数执行，函数中的thi指向是实例
+在new的时候，监听的函数不会立即执行
+watch(
+  a,
+  (newVal, oldVal) => {
+    console.log(newVal, oldVal);
+  },
+  {
+    immediate: true,//立即监听
+    deep: true,//深度监听
+  }
+);
+```
+
+##### 十六，watch和computed的区别
+
+```
+watch:
+	在new的 先执行initWatch函数，在此方法中迭代watch对象，
+	把每一项的值（可能是函数，可能是对象，还可能是数组）基于createWatcher进行处理！
+	如果有一项的值是一个数组，则把数组中的每一项都要基于 creatWacther进行处理
+	在creatWatcher函数中，最后也是基于Vue.prototype.$watch实现对这一项监听
+	而在$watch这个函数中，也是基于Watcher类的实例，实现监听处理的！和computed又是一致的
+	
+computed：
+	在new这个阶段，先执行initComputed$1方法，在此函数中：
+	首先迭代computed对象（配置项）中的每一项
+	把每一项，基于创建Watcher类的实例，进行监听处理
+	把每一项都执行defineComputed方法，对其每一项进行GET/SET劫持
+	在defineConputed方法中
+		GET劫持数据：是把createComputedGetter函数执行
+		SET劫持数据：如果我们没有设置，则设置为一个执行就报错的函数；如果设置了，就以我们设置的为主
+	在createComputedGetter方法中
+		执行返回computedGetter这个函数，这个函数就是计算属性做的GET劫持
+		当我们后期在视图中等地方，获取计算属性值的时候，执行computedGetter
+	在computedGetter方法中
+		基于Watcher类实例，以及提供的方法，算出最后的值
+		
+watch和computed：
+	从底层源码上来讲，不论watch还是computed都是通过watcher类实现监听处理的
+	1.如果是依赖一到多个状态，但是最后要算出一个新的值，此时用computed更好，
+	  因为除了自动监听以为，还具备计算缓存的结果，有助于性能提高
+	2.如果就是想监听某一个值的变化后，做一些逻辑处理，此时可以用watch处理
+	所以在开发的时候一般优先考虑computed计算属性，能用其解决，就用它解决，实在不行就用watch
+```
+
+##### 十七，生命周期
+
+```
+beforeCreate：在组件实例初始化完成之后立即调用。
+
+created：在组件实例处理完所有与状态相关的选项后调用。
+
+beforeMount：在组件被挂载之前调用。：
+
+mounted：在组件被挂载之后调用。
+
+beforeUpdate：在组件即将因为一个响应式状态变更而更新其 DOM 树之前调用。
+
+updated：在组件因为一个响应式状态变更而更新其 DOM 树之后调用。
+
+beforeUnmount：在一个组件实例被卸载之前调用。
+
+unmounted：在一个组件实例被卸载之后调用。
+
+errorCaptured：在捕获了后代组件传递的错误时调用。
+
+renderTracked：在一个响应式依赖被组件的渲染作用追踪后调用。（仅开发）
+
+renderTriggered：在一个响应式依赖被组件触发了重新渲染之后调用。（仅开发）
+
+activated：若组件实例是 <KeepAlive> 缓存树的一部分，当组件被插入到 DOM 中时调用。
+
+deactivated：若组件实例是 <KeepAlive> 缓存树的一部分，当组件从 DOM 中被移除时调用。
+
+serverPrefetch：当组件实例在服务器上被渲染之前要完成的异步函数。（仅服务器渲染）
+```
+
+##### 十八，nextTick
+
+```
+在Vue当中每次更改状态是同步的，但是通知视图更新是异步
+
+在Vue当中，每一次修改状态值，都会触发SET劫持函数，对于数组来讲，是基于重写的7个方法修改某一项的值
+	1.立即修改状态值（同步）
+	2.但是不会立即通知组件更新，而是把本次需要更新的需求，
+	  放在一个任务队列中；当同步代码执行完毕，在统一处理任务队列中的事情，
+	  这样处理的目的：同时修改多个状态值时，不是每修改一个就更新一次，而是统一更新一次，(异步)
+	  如果需要更新造成更新多次，则需要把更新状态值放在异步即可，
+	  但是如果你不在视图使用修改状态值，则不会触发视图去更新
+nextTick：	  
+	首先在修改状态值时，修改状态值这个是同步执行的，然后通知视图更新是异步执行的，
+	会把所有的需要更新视图的任务放进一个视图更新队列中，
+	如果途中有存在nextTick函数，则会把nextTick放进callBacks队列中
+	当所有的状态值修改完成后，开始执行视图更新队列中更新视图任务，当视图队列任务全部更新完成后，
+	会由vue内部callHooks$1,通知callBacks队列nextTick进行执行
+```
+
+<img src="./nextTick执行逻辑.png" style="zoom: 80%;" >
+
+##### 十九，为什么在Vue2组件中，要求data必须是一个函数？
+
+```
+我们创建的组件可能会被调用多次，
+如果data不基于闭包管理进行管理，那么多次调用，使用的那些状态值就会相互冲突，
+所以我们需要把data基于闭包包裹起来，让每次调用，所有的状态都是本次私有的
+```
+
+##### 二十，Component 动态组件
+
+```vue
+Component:
+	导入所需要的的组件，
+	使用defineOptions注册组件，
+	component组件绑定is属性绑定对应组件名称即可（字符串）
+<template>
+  <div>
+    <div @click="handleChange">
+      <button v-for="(item, index) in arr" :myIndex="index" :key="item.id">
+        {{ item.name }}
+      </button>
+    </div>
+    <component :is="arr[actuveIndex].name"></component>
+  </div>
+</template>
+
+<script>
+import { defineComponent } from "vue";
+
+export default defineComponent({
+  name: "",
+});
+</script>
+<script setup>
+import { ref, reactive, onMounted, shallowRef, markRaw } from "vue";
+import A from "./views/A.vue";
+import B from "./views/B.vue";
+import C from "./views/C.vue";
+const actuveIndex = ref(0);
+defineOptions({
+  components: {
+    A,
+    B,
+    C,
+  },
+});
+const arr = ref([
+  {
+    name: "A",
+    id: 1,
+  },
+  {
+    name: "B",
+    id: 2,
+  },
+  {
+    name: "C",
+    id: 3,
+  },
+]);
+const handleChange = (e) => {
+  actuveIndex.value = +e.target.getAttribute("myIndex");
+};
+</script>
+<style scoped lang="scss"></style>
+```
+
+##### 二十一，插槽
+
+```vue
+默认插槽：
+	
+	父组件：
+		<template>
+          <div>
+            <SlotApp>
+              <div>我是默认插槽</div>
+            </SlotApp>
+          </div>
+        </template>
+        <script>
+        import { defineComponent } from "vue";
+        export default defineComponent({
+          name: "Subassembly",
+        });
+        </script>
+        <script setup>
+        import { ref, reactive, onMounted } from "vue";
+        import SlotApp from "@/views/slot.vue";
+        </script>
+        <style scoped lang="scss" ></style>
+	子组件：
+		<template>
+          <div>
+            <slot></slot>
+          </div>
+        </template>
+        <script>
+        import { defineComponent } from "vue";
+        export default defineComponent({
+          name: "SlotApp",
+        });
+        </script>
+        <script setup>
+        import { ref, reactive, onMounted } from "vue";
+        </script>
+        <style scoped lang="scss" ></style>
+		
+具名插槽：
+
+	父组件：
+		<template>
+          <div>
+            <SlotApp>
+              <template #main>我是主体</template>
+              <template #header>我是头部</template>
+              <template #footer>我是底部</template>
+            </SlotApp>
+          </div>
+        </template>
+        <script>
+        import { defineComponent } from "vue";
+        export default defineComponent({
+          name: "Subassembly",
+        });
+        </script>
+        <script setup>
+        import { ref, reactive, onMounted } from "vue";
+        import SlotApp from "@/views/slot.vue";
+        </script>
+        <style scoped lang="scss" ></style>
+
+	子组件：
+		<template>
+          <div class="slot">
+            <div>
+              <slot name="header"></slot>
+            </div>
+            <div>
+              <slot name="main"></slot>
+            </div>
+            <div>
+              <slot name="footer"></slot>
+            </div>
+          </div>
+        </template>
+        <script>
+        import { defineComponent } from "vue";
+        export default defineComponent({
+          name: "Slot",
+        });
+        </script>
+        <script setup>
+        import { ref, reactive, onMounted } from "vue";
+        </script>
+        <style scoped lang="scss" >
+        </style>
+条件插槽：
+	父组件：
+		<template>
+          <div>
+            <SlotApp>
+              <template #main>我是主体</template>
+              <template #header>我是头部</template>
+              <template #footer>我是底部</template>
+            </SlotApp>
+          </div>
+        </template>
+
+        <script>
+        import { defineComponent } from "vue";
+        export default defineComponent({
+          name: "Subassembly",
+        });
+        </script>
+        <script setup>
+        import { ref, reactive, onMounted } from "vue";
+        import SlotApp from "@/views/slot.vue";
+        </script>
+        <style scoped lang="scss" ></style>
+	子组件：
+		<template>
+          <div class="slot">
+            <div v-if="$slots.header">
+              <slot name="header"></slot>
+            </div>
+            <div v-if="$slots.main">
+              <slot name="main"></slot>
+            </div>
+            <div v-if="$slots.footer">
+              <slot name="footer"></slot>
+            </div>
+          </div>
+        </template>
+        <script>
+        import { defineComponent } from "vue";
+        export default defineComponent({
+          name: "Slot",
+        });
+        </script>
+        <script setup>
+        import { ref, reactive, onMounted } from "vue";
+        </script>
+        <style scoped lang="scss" >
+        </style>
+动态插槽：
+	父组件：
+		<template>
+          <div>
+            <SlotApp>
+              <template #[variables1]>我是头部</template>
+              <template #[variables2]>我是主体</template>
+              <template #[variables3]>我是底部</template>
+            </SlotApp>
+          </div>
+        </template>
+
+        <script>
+        import { defineComponent } from "vue";
+        export default defineComponent({
+          name: "Subassembly",
+        });
+        </script>
+        <script setup>
+        import { ref, reactive, onMounted } from "vue";
+        import SlotApp from "@/views/slot.vue";
+        const variables1 = ref("header");
+        const variables2 = ref("main");
+        const variables3 = ref("footer");
+        </script>
+        <style scoped lang="scss" ></style>
+
+	子组件：
+		<template>
+          <div class="slot">
+            <div>
+              <slot name="header"></slot>
+            </div>
+            <div>
+              <slot name="main"></slot>
+            </div>
+            <div>
+              <slot name="footer"></slot>
+            </div>
+          </div>
+        </template>
+
+        <script>
+        import { defineComponent } from "vue";
+
+        export default defineComponent({
+          name: "Slot",
+        });
+        </script>
+        <script setup>
+        import { ref, reactive, onMounted } from "vue";
+        </script>
+        <style scoped lang="scss" >
+        </style>
+
+插槽作用域：实现子父传参
+	父组件：
+		<template>
+          <div>
+            <SlotApp>
+              <template #[variables1]="{ list }">
+                <div v-for="item in list" :key="item">{{ item.name }}</div>
+              </template>
+              <template #[variables2]>我是主体</template>
+              <template #[variables3]>我是底部</template>
+            </SlotApp>
+          </div>
+        </template>
+        <script>
+        import { defineComponent } from "vue";
+        export default defineComponent({
+          name: "Subassembly",
+        });
+        </script>
+        <script setup>
+        import { ref, reactive, onMounted } from "vue";
+        import SlotApp from "@/views/slot.vue";
+        const variables1 = ref("header");
+        const variables2 = ref("main");
+        const variables3 = ref("footer");
+        </script>
+        <style scoped lang="scss" ></style>
+	
+	子组件：
+		<template>
+          <div class="slot">
+            <div>
+              <slot name="header" :list="list"></slot>
+            </div>
+            <div>
+              <slot name="main"></slot>
+            </div>
+            <div>
+              <slot name="footer"></slot>
+            </div>
+          </div>
+        </template>
+        <script>
+        import { defineComponent } from "vue";
+        export default defineComponent({
+          name: "Slot",
+        });
+        </script>
+        <script setup>
+        import { ref, reactive, onMounted } from "vue";
+        const list = ref([
+          { name: "张三", age: 18 },
+          { name: "李四", age: 19 },
+          { name: "王五", age: 20 },
+        ]);
+        </script>
+        <style scoped lang="scss" >
+        </style>
+```
+
