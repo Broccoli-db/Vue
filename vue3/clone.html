@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <script>
+        let obj = {
+            name: "张三",
+            age: 18,
+            sex: "男",
+            car: {
+                name: "奔驰",
+                price: 100000,
+                obj2: {
+                    name: "李四",
+                    age: 20,
+                }
+            },
+            fn: function () {
+
+            },
+            arr: [1, 2, 3, 4, 6, 5, 9, 8, 7, 7, 123, 9, 4, 1, 32, 1, 1, [2123, [12, [12]]]],
+            asd: Symbol("asd"),
+        }
+        const copy = (obj) => {
+            let objBlo = Object.prototype.toString.call(obj) === '[object Object]'
+            let arrBlo = Object.prototype.toString.call(obj) === '[object Array]'
+            if (!objBlo && !arrBlo) return obj
+            if (objBlo) {
+                let newObj = {}
+                Reflect.ownKeys(obj).forEach(key => {
+                    newObj[key] = copy(obj[key])
+                })
+                return newObj
+            } else if (arrBlo) {
+                let newArr = []
+                obj.forEach(item => {
+                    newArr.push(copy(item))
+                })
+                return newArr
+            }
+        }
+        let newObj = copy(obj)
+        console.log(newObj);
+        console.log(obj===newObj);
+        let x = "1"
+        let y = copy(x)
+        console.log(
+            x===y
+        );
+        // function deepClone(obj) {
+        //     if (obj === null || typeof obj !== 'object') {
+        //         return obj;
+        //     }
+        //     if (Array.isArray(obj)) {
+        //         const newArr = [];
+        //         for (let i = 0; i < obj.length; i++) {
+        //             newArr[i] = deepClone(obj[i])
+        //         }
+        //         return newArr;
+        //     }
+        //     const newObj = {};
+        //     for (let key in newObj) {
+        //         //过滤掉从原型链继承来的属性，只处理对象本身的属性
+        //         //hasOwnProperty是判断一个对象是否具有某个属性的函数，通过这个判断，可以避免拷贝对象原型链上的属性
+        //         if (obj.hasOwnProperty(key)) {
+        //             newObj[key] = deepClone(newObj[key]);
+        //         }
+        //     }
+            
+        //     return newObj;
+        // }
+        // let mmm = deepClone(obj)
+        // console.log(mmm);
+
+    </script>
+</body>
+
+</html>

@@ -895,3 +895,160 @@ const handleChange = (e) => {
         </style>
 ```
 
+##### 二十二，自定义事件
+
+```vue
+每次调用子组件，都是创建子组件的一个实例，而在每个实例，都是有一个自定事件池
+父组件：
+	<template>
+      <div>
+        <SlotApp @fn="fn"> </SlotApp>
+      </div>
+    </template>
+    <script>
+    import { defineComponent } from "vue";
+    export default defineComponent({
+      name: "Subassembly",
+    });
+    </script>
+    <script setup>
+    import { ref, reactive, onMounted } from "vue";
+    import SlotApp from "@/views/slot.vue";
+    const fn = (mesg) => {
+      console.log(mesg);
+    };
+    </script>
+    <style scoped lang="scss" ></style>
+子组件：
+	<template>
+      <div>
+        <button @click="Click">Toggle</button>
+      </div>
+    </template>
+    <script>
+    import { defineComponent } from "vue";
+    export default defineComponent({
+      name: "",
+    });
+    </script>
+    <script setup>
+    import { ref, reactive, onMounted } from "vue";
+    const emit = defineEmits();
+    const Click = () => {
+      emit("fn", "Hello");
+    };
+    </script>
+    <style scoped lang="scss" ></style>
+
+在父组件定义某一个事件，使用v-on或者@符绑定给子组件
+在子组件可以调用defineEmits拿到emit事件，
+emit()方法可以接收两个参数
+	参数一：父组件绑定的对应事件名称
+	参数二：传给父组件的的参数 (在父组件定义的函数接收的参数就是子组件传递过来的)
+```
+
+<img src="./自定义事件.png">
+
+##### 二十三，全局自定义指令
+
+```js
+在mian.js中注册
+使用app.directive()方法接收两个参数
+	参数一：指令名称，
+	参数二：一个对象，多个生命周期
+    
+    el：绑定的标签元素
+    binding.valeu：绑定的值
+	vnode：虚拟DOM
+    prevVnode:代表之前的渲染中指令所绑定元素的 VNode。仅在 beforeUpdate 和 updated 钩子中可用。
+    
+	app.directive("background",{
+      // 在绑定元素的 attribute 前
+      // 或事件监听器应用前调用
+      created(el, binding, vnode) {
+        // 下面会介绍各个参数的细节
+      },
+      // 在元素被插入到 DOM 前调用
+      beforeMount(el, binding, vnode) {},
+      // 在绑定元素的父组件
+      // 及他自己的所有子节点都挂载完成后调用
+      mounted(el, binding, vnode) {
+        el.style.background = binding.value
+      },
+      // 绑定元素的父组件更新前调用
+      beforeUpdate(el, binding, vnode, prevVnode) {},
+      // 在绑定元素的父组件
+      // 及他自己的所有子节点都更新后调用
+      updated(el, binding, vnode, prevVnode) {},
+      // 绑定元素的父组件卸载前调用
+      beforeUnmount(el, binding, vnode) {},
+      // 绑定元素的父组件卸载后调用
+      unmounted(el, binding, vnode) {}
+    })
+```
+
+##### 二十四，Vue3传参
+
+```
+子父传参：
+	slot:插槽作用域
+	v-model：双向绑定
+	自定义事件：@xxxx
+	ref和属性暴露：ref和defineExpose
+```
+
+##### 二十五，VueX
+
+```
+state：存储公共状态信息
+getters：存储公共的计算属性
+mutations：同步修改公共状态方法
+actions:异步修改公共状态方法
+modules：按模块进行划分和管理
+plugins：使用插件
+
+在组件中如何使用
+mapState:获取state
+mapGetters:获取getters
+mapMutations：获取mutations中的方法
+mapActions：获取actions中的方法
+```
+
+##### 二十六，什么是SEO优化
+
+```
+百度/谷歌等搜索引擎，会定期的去网站中抓取(收录)内容，并计算网站的权重；
+当用户输入某一个关键词，搜索引擎会把匹配的网站，按照权重依次展示！！
+SEO优化的目的：让搜索引擎多收录一些内容，让自己的网站权重更改一些
+```
+
+##### 二十七，Hash路由机制
+
+```
+Hash哈希路由：
+	原理：每一次路由切换都是获取内容切换，都是修改页面的Hash值
+		页面的哈希值改变，页面并不会刷新
+		我们可以监听window.addEventListener('hashchange',()=>{})事件
+		当哈希值改变的时候会触发该事件，我们可以获取到页面的哈希值，
+		然后拿这个哈希值，去路由表进行匹配，把匹配的组件放在指定的容器渲染
+```
+
+<img src="./Hash路由.png" style="zoom:80%;" >
+
+##### 二十八，History路由机制
+
+```js
+History路由机制：
+	原理：利用HistoryAPI(一个History对象，其中包含很多路由跳转的方法)来实现路由切换
+		 首先基于HistoryAPI进行切换的时候，有一个历史记录，存储每一次切换的地址
+		 history.pushState：跳转一个新的地址，并新增一条历史记录
+		 history.replaceState：跳转一个新的地址，但是，替换现有的历史记录
+		 history.back：回到上一条
+         history.forward：快进到下一条
+         history.go：跳转到指定索引这一条，history.go(-1)===history.back()
+		 基于这些方法进行路由切换的时候，页面不会刷新的
+         我们可以在切换完成后，获取当前最新的地址，去路由表进行匹配，把匹配的组件/内容放在指定容器渲染
+		 我们可以基于window.onpopstate事件进行监听，这个在执行back/forward/go进行触发
+```
+
+<img src="./history路由.png" style="zoom:80%;" >

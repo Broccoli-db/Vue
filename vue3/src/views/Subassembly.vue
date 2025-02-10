@@ -1,12 +1,6 @@
 <template>
-  <div>
-    <SlotApp>
-      <template #[variables1]="{ list }">
-        <div v-for="item in list" :key="item">{{ item.name }}</div>
-      </template>
-      <template #[variables2]>我是主体</template>
-      <template #[variables3]>我是底部</template>
-    </SlotApp>
+  <div style="width: 100px; height: 100px" v-background="'red'">
+    <SlotApp @fn="fn"> </SlotApp>
   </div>
 </template>
 
@@ -20,8 +14,8 @@ export default defineComponent({
 <script setup>
 import { ref, reactive, onMounted } from "vue";
 import SlotApp from "@/views/slot.vue";
-const variables1 = ref("header");
-const variables2 = ref("main");
-const variables3 = ref("footer");
+const fn = (mesg) => {
+  console.log(mesg);
+};
 </script>
 <style scoped lang="scss" ></style>
