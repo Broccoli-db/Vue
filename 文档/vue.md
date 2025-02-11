@@ -1019,7 +1019,7 @@ mapActions：获取actions中的方法
 ```
 百度/谷歌等搜索引擎，会定期的去网站中抓取(收录)内容，并计算网站的权重；
 当用户输入某一个关键词，搜索引擎会把匹配的网站，按照权重依次展示！！
-SEO优化的目的：让搜索引擎多收录一些内容，让自己的网站权重更改一些
+SEO优化的目的：让搜索引擎多收录一些内容，让自己的网站权重更高一些
 ```
 
 ##### 二十七，Hash路由机制
@@ -1052,3 +1052,141 @@ History路由机制：
 ```
 
 <img src="./history路由.png" style="zoom:80%;" >
+
+##### 二十九，为什么vite比webpack启动快
+
+```
+Vite 利用现代浏览器对原生 ES 模块（ESM）的支持，
+它不需要将整个应用打包成一个大文件再去处理。
+而 Webpack 则是把所有模块打包成一个大的 JavaScript 文件（或多个文件），
+在开发时需要解析并构建出完整的依赖图，启动速度较慢。
+```
+
+##### 三十，vue2与vue3的区别
+
+```vue
+性能的提升：重新虚拟DOM的实现，TreeShaking（vue的按需打包）,Proxy
+	vue2是基于vue-template-compiler实现对<template>视图的编译
+	不论是静态还是动态节点，都需要进行编译处理
+	
+	vue3是基于@vue/compiler-sfc实现对<template>视图进行编译
+	跳过静态节点，只处理动态节点
+	
+<Teleport>:指定标签的内容插入页面的某一个节点
+			<template>
+              <div style="width: 100px; height: 100px" v-background="'red'"></div>
+              <Teleport to="body">
+                <div>123456789</div>
+              </Teleport>
+            </template>
+
+            <script>
+            import { defineComponent } from "vue";
+
+            export default defineComponent({
+              name: "Subassembly",
+            });
+            </script>
+            <script setup>
+            import { ref, reactive, onMounted } from "vue";
+            </script>
+            <style scoped lang="scss" ></style>
+
+<Suspense>:异步组件
+    		需要子组件的配合使用，例如在子组件直接在<script setup></script>内调用接口，
+    		而不是放在某一个周期函数中调用，这会导致组件无法使用数据渲染到视图
+    
+    		父组件：
+    			<template>
+                  <div style="width: 100px; height: 100px" v-background="'red'"></div>
+                  <Suspense>
+                    <Slot></Slot>
+                  </Suspense>
+                </template>
+
+                <script>
+                import { defineComponent } from "vue";
+
+                export default defineComponent({
+                  name: "Subassembly",
+                });
+                </script>
+                <script setup>
+                import { ref, reactive, onMounted } from "vue";
+                import Slot from "./slot.vue";
+                </script>
+                <style scoped lang="scss" ></style>
+    
+    		子组件：
+    			<template>
+                  <div>
+                    <div v-for="item in data" :key="item.id">
+                      {{ item.title }}
+                    </div>
+                  </div>
+                </template>
+
+                <script>
+                import { defineComponent } from "vue";
+
+                export default defineComponent({
+                  name: "",
+                });
+                </script>
+                <script setup>
+                import { ref, reactive, onMounted } from "vue";
+                const data = ref([{ id: 1, title: "title1" }]);
+                let res = await fetch("/jian/subscriptions/recommended_collections");
+                data.value = await res.json();
+                </script>
+                <style scoped lang="scss" ></style>
+    
+支持Ts，视图支持多个根节点，组合式Api
+    
+整理：
+    Vue3重写虚拟DOM的实现(使用了@vue/compiler-sfc实现试图编译，跳过静态节点，只处理动态节点),
+    vue2使用的是(vue-compiler-template，不论是静态还是动态节点，都需要进行编译处理),
+    使用了TreeShaking按需打包，响应式不再使用defineProperty，而是poxry
+    支持TS,视图支持多个根节点，以及添加了组合式Api，
+    还添加了<Suspense>和<Teleport>组件，
+    Vue3不兼容IE
+```
+
+##### 三十一，vue3的响应式
+
+```js
+1.使用ES6的PxoryAPI
+2.使用ReflectAPI
+
+Pxory:
+	接收两个参数
+	参数一：需要被劫持的对象/数组
+	参数二：一个对象，对象有多种劫持规则例如：has/delerProperty/owenKeys/get/set
+	        const obj = {
+                name: '张三',
+                age: 18,
+                arr: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+            }
+            let p1 = new Proxy(obj, {
+                deleteProperty(target, key) { 
+                    console.log('delete', key);
+                    return Reflect.deleteProperty(target, key);
+                },
+                set(target, key, value) {
+                    console.log('set', key, value);
+                    return Reflect.set(target, key, value);
+                },
+                get(target, key) {
+                    console.log('get', key);
+                    return Reflect.get(target, key);
+                }
+            })
+
+为啥要使用ProxyApi实现数据劫持呢？
+	无需依次循环对象的每一项，分别去做劫持处理，而是对整个对象直接做代理（性能更好）
+	对于数组无需单独处理，也是直接对整个数组做代理即可（操作便捷）
+	不仅仅可以做GET/SET劫持，而且还支持更多的劫持操作，例如：has/delerProperty/owenKeys/....
+	
+vue3不仅仅做了GET/SET劫持，还做了has/ownKeys/deletProperty
+```
+

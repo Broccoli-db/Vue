@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <script>
+        let data = {
+            name: "张三",
+            age: 18,
+            sex: "男",
+            hobby: "篮球",
+            address: {
+                city: "北京",
+                province: "北京",
+                country: "中国"
+            },
+            obj: {
+                name: "李四",
+                age: 19,
+                sex: "女",
+                hobby: "足球",
+                address: {
+                    city: "上海",
+                    province: "上海",
+                    country: "中国"
+                }
+            },
+            frozen: Object.freeze({
+                name: "王五",
+                age: 20,
+                sex: "男",
+                hobby: "羽毛球",
+                address: {
+                    city: "广州",
+                    province: "广东",
+                    country: "中国"
+                }
+            }),
+            fn: function () {
+                console.log("fn");
+            },
+            arr: [1, 2, 3, 4, 5],
+            arr2: [1, 2, 3, 4, 5, 6,
+                [20, 30],
+                {
+                    name: "赵六",
+                    age: 21,
+                    sex: "女",
+                    hobby: "乒乓球",
+                    address: {
+                        city: "深圳",
+                        province: "广东",
+                        country: "中国"
+                    }
+                },
+            ]
+        }
+        let baseHandlers = {
+            get:(target,key)=>{
+                const res = Reflect.get(target,key);
+                if(target === null || typeof target !== "object"){
+                    return reactive(res);
+                }
+                return res;
+            },
+            set:(target,key,value)=>{
+                let oldValue = target[key];
+                if (oldValue === newValue) {
+                    return true;
+                }
+                let result = Reflect.set(target,key,value);
+                // 这里需要通知视图更新
+                return result;
+            },
+            deleteProperty:(target,key)=>{
+                let result = Reflect.deleteProperty(target,key);
+                // 这里需要通知视图更新
+                return result;  
+            },
+            has:(target,key)=>{
+                let result = Reflect.has(target,key);
+                // 这里需要通知视图更新
+                return result;
+            },
+            ownKeys:(target,key)=>{
+                let result = Reflect.ownKeys(target);
+                // 这里需要通知视图更新
+                return result;
+            },
+        }
+        const proxyMap = new WeakMap();
+        function reactive(target) {
+            return createReactiveObject(target, baseHandlers);
+        }
+        function createReactiveObject(target, baseHandlers) {
+            if (target === null || typeof target !== "object") {
+                throw new Error("target must be a object");
+                return target;
+            }
+            if(proxyMap.get(target)) return proxyMap.get(target);
+            const proxy = new Proxy(target, baseHandlers);
+            proxyMap.set(target,proxy);
+            return proxy;
+        }
+        reactive(data)
+        console.log( reactive(data));
+        
+    </script>
+</body>
+
+</html>

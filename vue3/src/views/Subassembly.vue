@@ -1,7 +1,8 @@
 <template>
-  <div style="width: 100px; height: 100px" v-background="'red'">
-    <SlotApp @fn="fn"> </SlotApp>
-  </div>
+  <div style="width: 100px; height: 100px" v-background="'red'"></div>
+  <Suspense>
+    <Slot></Slot>
+  </Suspense>
 </template>
 
 <script>
@@ -13,9 +14,6 @@ export default defineComponent({
 </script>
 <script setup>
 import { ref, reactive, onMounted } from "vue";
-import SlotApp from "@/views/slot.vue";
-const fn = (mesg) => {
-  console.log(mesg);
-};
+import Slot from "./slot.vue";
 </script>
 <style scoped lang="scss" ></style>

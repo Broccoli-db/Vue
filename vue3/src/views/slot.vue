@@ -1,6 +1,8 @@
 <template>
   <div>
-    <button @click="Click">Toggle</button>
+    <div v-for="item in data" :key="item.id">
+      {{ item.title }}
+    </div>
   </div>
 </template>
 
@@ -13,10 +15,8 @@ export default defineComponent({
 </script>
 <script setup>
 import { ref, reactive, onMounted } from "vue";
-const emit = defineEmits();
-const Click = () => {
-  emit("fn", "Hello");
-};
+const data = ref([{ id: 1, title: "title1" }]);
+let res = await fetch("/jian/subscriptions/recommended_collections");
+data.value = await res.json();
 </script>
-
 <style scoped lang="scss" ></style>

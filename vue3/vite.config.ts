@@ -15,4 +15,13 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+  server: {
+    proxy: {
+      '/jian': {
+        target: 'https://www.jianshu.com/asimov',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/jian/, '')
+      }
+    }
+  }
 })
