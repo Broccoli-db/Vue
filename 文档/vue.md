@@ -1188,6 +1188,56 @@ Pxory:
 	不仅仅可以做GET/SET劫持，而且还支持更多的劫持操作，例如：has/delerProperty/owenKeys/....
 	
 vue3不仅仅做了GET/SET劫持，还做了has/ownKeys/deletProperty
+
+vue3简单的响应式源码：
+	        let baseHandlers = {
+                get:(target,key)=>{
+                    const res = Reflect.get(target,key);
+                    if(target === null || typeof target !== "object"){
+                        return reactive(res);
+                    }
+                    return res;
+                },
+                set:(target,key,value)=>{
+                    let oldValue = target[key];
+                    if (oldValue === newValue) {
+                        return true;
+                    }
+                    let result = Reflect.set(target,key,value);
+                    // 这里需要通知视图更新
+                    return result;
+                },
+                deleteProperty:(target,key)=>{
+                    let result = Reflect.deleteProperty(target,key);
+                    // 这里需要通知视图更新
+                    return result;  
+                },
+                has:(target,key)=>{
+                    let result = Reflect.has(target,key);
+                    // 这里需要通知视图更新
+                    return result;
+                },
+                ownKeys:(target,key)=>{
+                    let result = Reflect.ownKeys(target);
+                    // 这里需要通知视图更新
+                    return result;
+                },
+            }
+            const proxyMap = new WeakMap();
+            function reactive(target) {
+                return createReactiveObject(target, baseHandlers);
+            }
+            function createReactiveObject(target, baseHandlers) {
+                if (target === null || typeof target !== "object") {
+                    throw new Error("target must be a object");
+                    return target;
+                }
+                if(proxyMap.get(target)) return proxyMap.get(target);
+                const proxy = new Proxy(target, baseHandlers);
+                proxyMap.set(target,proxy);
+                return proxy;
+            }
+            reactive(data)
 ```
 
 ##### 三十二，Vue3.5版本
