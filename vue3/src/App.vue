@@ -12,7 +12,7 @@ export default defineComponent({
 });
 </script>
 <script setup>
-import { ref, reactive, onMounted } from "vue";
+import { ref, reactive, onMounted,useTemplateRef,onWatcherCleanup } from "vue";
 import { RouterView } from "vue-router";
 </script>
 

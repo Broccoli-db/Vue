@@ -1190,3 +1190,17 @@ Pxory:
 vue3不仅仅做了GET/SET劫持，还做了has/ownKeys/deletProperty
 ```
 
+##### 三十二，Vue3.5版本
+
+```vue
+1.更新了props，可以解构出来Props属性，但是watch监听结构出来的属性，仍然需要使用函数返回
+2.添加了useId方法，返回一个全局的唯一Id
+3.添加了useTemplateRef,与之前的Ref获取Dom/组件实例用法相同
+
+	conts divRef = useTemplateRef('div')
+	<div ref="div"></div>
+
+4.添加了onWatcherCleanup，主要的作用是清理watch的副作用
+5.响应式系统的更新，优化了内存占用和依赖追踪的性能
+```
+
