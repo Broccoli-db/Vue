@@ -64,7 +64,13 @@ export const data = {
     }
   ],
   "git": {
-    "contributors": []
+    "contributors": [
+      {
+        "name": "戴志文",
+        "email": "2649212120",
+        "commits": 1
+      }
+    ]
   },
   "filePathRelative": "base/javascript.md"
 }
