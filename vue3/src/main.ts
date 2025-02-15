@@ -5,7 +5,7 @@ import { createPinia } from 'pinia'
 
 import App from './App.vue'
 import router from './router'
-
+import "./index.scss"
 const app = createApp(App)
 app.directive("background",{
       // 在绑定元素的 attribute 前
