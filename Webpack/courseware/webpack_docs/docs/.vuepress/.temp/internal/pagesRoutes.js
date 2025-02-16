@@ -2,11 +2,6 @@ import { Vuepress } from '@vuepress/client/lib/components/Vuepress'
 
 const routeItems = [
   ["v-8daa1a0e","/",{"title":"首页"},["/index.html","/README.md"]],
-  ["v-0670fc65","/intro/asset.html",{"title":"学习资料"},["/intro/asset","/intro/asset.md"]],
-  ["v-581e5b94","/intro/group.html",{"title":"适合群体"},["/intro/group","/intro/group.md"]],
-  ["v-7d0ce4de","/intro/learn.html",{"title":"我能学到什么"},["/intro/learn","/intro/learn.md"]],
-  ["v-10b408dc","/intro/pre.html",{"title":"前置知识"},["/intro/pre","/intro/pre.md"]],
-  ["v-f9e30908","/intro/",{"title":"依赖环境"},["/intro/index.html","/intro/README.md"]],
   ["v-a6cc4bba","/base/base.html",{"title":"基本使用"},["/base/base","/base/base.md"]],
   ["v-21f1ba15","/base/clean.html",{"title":"自动清空上次打包资源"},["/base/clean","/base/clean.md"]],
   ["v-e703ecdc","/base/config.html",{"title":"基本配置"},["/base/config","/base/config.md"]],
@@ -24,6 +19,11 @@ const routeItems = [
   ["v-1455d425","/base/",{"title":"前言"},["/base/index.html","/base/README.md"]],
   ["v-5e3bb631","/base/server.html",{"title":"开发服务器&自动化"},["/base/server","/base/server.md"]],
   ["v-ce2194d0","/base/summary.html",{"title":"总结"},["/base/summary","/base/summary.md"]],
+  ["v-0670fc65","/intro/asset.html",{"title":"学习资料"},["/intro/asset","/intro/asset.md"]],
+  ["v-581e5b94","/intro/group.html",{"title":"适合群体"},["/intro/group","/intro/group.md"]],
+  ["v-7d0ce4de","/intro/learn.html",{"title":"我能学到什么"},["/intro/learn","/intro/learn.md"]],
+  ["v-10b408dc","/intro/pre.html",{"title":"前置知识"},["/intro/pre","/intro/pre.md"]],
+  ["v-f9e30908","/intro/",{"title":"依赖环境"},["/intro/index.html","/intro/README.md"]],
   ["v-61413f94","/project/react-cli.html",{"title":"React 脚手架"},["/project/react-cli","/project/react-cli.md"]],
   ["v-c9bbfba2","/project/",{"title":"介绍"},["/project/index.html","/project/README.md"]],
   ["v-2a04a4a2","/project/summary.html",{"title":"总结"},["/project/summary","/project/summary.md"]],

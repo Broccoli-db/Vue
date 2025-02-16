@@ -1,5 +1,7 @@
 ### WebPack
 
+#### 重点：想要对文件资源进行打包必须引入webpack指定的入口文件
+
 ##### 一，为什么需要打包工具
 
 ```
@@ -324,6 +326,263 @@ webpack.config.js文件：
           //模式
           mode: "development",
         };
+
+```
+
+##### 九，针对各个资源打包到对应的文件目录
+
+```js
+path:所有的文件输出路径
+filename:入口文件打包的输出文件名
+在配置打包编译图片的对象下，添加generator对象
+generator对象中添加fliename属性，
+属性值需要打包在哪一个文件夹的路径
+[hash:10]：随机生成的哈希文件名，只取前10位
+static/images/[hash:10][ext][query]
+
+        const path = require("path");
+        module.exports = {
+          //入口
+          entry: "./src/main.js", //x相对路径
+          //输出
+          output: {
+            // 文件的输出路径
+            path: path.resolve(__dirname, "dist"), //绝对路径
+            // 文件名
+            filename: "static/js/main.js", //把入口文件打包到static文件下的js文件
+          },
+          //加载器
+          module: {
+            rules: [
+              {
+                test: /\.(png|jpe?g|gif|webp)$/,
+                type: "asset",
+                parser: {
+                  dataUrlCondition: {
+                    maxSize: 10 * 1024, // 小于10kb的图片会被base64处理
+                  },
+                },
+                generator: {
+                    //[hash:10]:自动生成的哈希值只取前十位
+                  filename: "static/images/[hash:10][ext][query]",//把图片文件打包到static文件下的images文件中
+                },
+              },
+            ],
+          },
+          //插件
+          plugins: [],
+          //模式
+          mode: "development",
+        };
+
+```
+
+##### 十，设置每次打包结果都会自动清空上一次的打包结果
+
+```js
+在output(出口)对象下添加clean:true即可，
+每次重新构建时清除dist文件夹
+const path = require("path");
+module.exports = {
+  //入口
+  entry: "./src/main.js", //x相对路径
+  //输出
+  output: {
+    // 文件的输出路径
+    path: path.resolve(__dirname, "dist"), //绝对路径
+    // 文件名
+    filename: "static/js/main.js",
+    clean: true, //每次重新构建时清除dist文件夹
+  },
+  //加载器
+  module: {
+    rules: [
+      {
+        test: /\.css$/,
+        use: ["style-loader", "css-loader"],
+      },
+      {
+        test: /\.less$/,
+        use: ["style-loader", "css-loader", "less-loader"],
+      },
+      {
+        test: /\.(scss|sass)$/,
+        use: ["style-loader", "css-loader", "sass-loader"],
+      },
+      {
+        test: /\.(png|jpe?g|gif|webp)$/,
+        type: "asset",
+        parser: {
+          dataUrlCondition: {
+            maxSize: 10 * 1024, // 小于10kb的图片会被base64处理
+          },
+        },
+        generator: {
+          filename: "static/images/[hash][ext][query]",
+        },
+      },
+    ],
+  },
+  //插件
+  plugins: [],
+  //模式
+  mode: "development",
+};
+
+```
+
+##### 十一，处理字体图标资源
+
+```js
+在加载器module下的rules数组中添加
+      {
+        test: /\.(ttf|woff2?|eot|svg)$/,
+        type: "asset/resource",
+        generator: {
+          filename: "static/font/[hash:10][ext][query]",
+        },
+      },
+
+    const path = require("path");
+    module.exports = {
+      //入口
+      entry: "./src/main.js", //x相对路径
+      //输出
+      output: {
+        // 文件的输出路径
+        path: path.resolve(__dirname, "dist"), //绝对路径
+        // 文件名
+        filename: "static/js/main.js",
+        clean: true, //每次重新构建时清除dist文件夹
+      },
+      //加载器
+      module: {
+        rules: [
+          {
+            test: /\.(ttf|woff2?|eot|svg)$/,
+            type: "asset/resource",
+            generator: {
+              filename: "static/font/[hash:10][ext][query]",
+            },
+          },
+        ],
+      },
+      //插件
+      plugins: [],
+      //模式
+      mode: "development",
+    };
+
+```
+
+##### 十二，处理其他资源
+
+```js
+处理其他资源与处理文字图标一样
+在module（加载器）对象下的rules数组添加
+ 	{
+        test: /\.(ttf|woff2?|eot|svg)$/,
+        type: "asset/resource",
+        generator: {
+          filename: "static/font/[hash:10][ext][query]",
+        },
+      },
+如果需要处理其他资源只需要在test正则中加入对应的资源类型名称
+          
+          
+    const path = require("path");
+    module.exports = {
+      //入口
+      entry: "./src/main.js", //x相对路径
+      //输出
+      output: {
+        // 文件的输出路径
+        path: path.resolve(__dirname, "dist"), //绝对路径
+        // 文件名
+        filename: "static/js/main.js",
+        clean: true, //每次重新构建时清除dist文件夹
+      },
+      //加载器
+      module: {
+        rules: [
+          {
+            test: /\.(ttf|woff2?|eot|svg)$/,
+            type: "asset/resource",
+            generator: {
+              filename: "static/font/[hash:10][ext][query]",
+            },
+          },
+        ],
+      },
+      //插件
+      plugins: [],
+      //模式
+      mode: "development",
+    };
+
+```
+
+##### 十三，处理js资源
+
+```
+为什么要处理js文件代码？？
+webpack只能编译Es module语法，不能编译其他语法，导致无法在Ie浏览器运行
+
+兼容处理：使用babel插件处理
+代码格式：使用eslint进行要求
+```
+
+##### 十三，Eslint
+
+```js
+可组装的js和jsx的检查工具
+在项目的根目录创建eslint文件，文件可有多种格式。
+	旧版本：
+        1.  .eslintrc
+        2.  .eslintrc.js
+        3.  .eslintrc.json
+	新版本：
+    	1.eslint.config.js
+        2.eslint.config.mjs
+        3.eslint.config.cjs
+        4.eslint.config.ts（需要 附加设置）
+        5.eslint.config.mts（需要 附加设置）
+        6.eslint.config.cts（需要 附加设置）
+举例.eslintrc.js文件
+	parserOptions：解析选项
+    
+	rules：具体配置规则
+          	"off" 或 0 - 关闭规则
+            "warn" 或 1 - 开启规则，使用警告级别的错误：warn (不会导致程序退出)
+            "error" 或 2 - 开启规则，使用错误级别的错误：error (当被触发的时候，程序会退出)		
+    		某一规则："off"(必须是字符串)
+            某一规则：0(必须是数字)
+
+	extends：继承其他规则,如果rules写在继承后面，则会覆盖继承的规则
+    
+	module.exports = {
+      parserOptions: {
+        ecmaVersion: 6, // ES 语法版本
+        sourceType: "module", // ES 模块化
+        ecmaFeatures: {
+          // ES 其他特性
+          jsx: true, // 如果是 React 项目，就需要开启 jsx 语法
+        },
+      },
+      rules: {
+        semi: "error", // 禁止使用分号
+        "array-callback-return": "warn", // 强制数组方法的回调函数中有 return 语句，否则警告
+        "default-case": [
+          "warn", // 要求 switch 语句中有 default 分支，否则警告
+          { commentPattern: "^no default$" }, // 允许在最后注释 no default, 就不会有警告了
+        ],
+        eqeqeq: [
+          "warn", // 强制使用 === 和 !==，否则警告
+          "smart", // https://eslint.bootcss.com/docs/rules/eqeqeq#smart 除了少数情况下不会有警告
+        ],
+      },
+      extends: {},
+    };
 
 ```
 

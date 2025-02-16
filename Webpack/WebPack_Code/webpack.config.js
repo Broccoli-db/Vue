@@ -7,7 +7,8 @@ module.exports = {
     // 文件的输出路径
     path: path.resolve(__dirname, "dist"), //绝对路径
     // 文件名
-    filename: "main.js",
+    filename: "static/js/main.js",
+    clean: true, //每次重新构建时清除dist文件夹
   },
   //加载器
   module: {
@@ -31,6 +32,16 @@ module.exports = {
           dataUrlCondition: {
             maxSize: 10 * 1024, // 小于10kb的图片会被base64处理
           },
+        },
+        generator: {
+          filename: "static/images/[hash:10][ext][query]",
+        },
+      },
+      {
+        test: /\.(ttf|woff2?|eot|svg|mp4)$/,
+        type: "asset/resource",
+        generator: {
+          filename: "static/font/[hash:10][ext][query]",
         },
       },
     ],
