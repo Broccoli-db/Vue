@@ -1,0 +1,20 @@
+.box {
+    width: 100vw;
+    height: 100vh;
+    background-color: antiquewhite;
+
+    .item {
+        width: 300px;
+        height: 80px;
+        background-color: #fff;
+    }
+}
+
+.menu {
+    width: 100px;
+    height: auto;
+    background-color: #000;
+    position: fixed;
+    transition: height 0.3s ease-out;
+    height: calc-size(auto);
+}
