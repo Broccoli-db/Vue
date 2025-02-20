@@ -586,3 +586,464 @@ webpack只能编译Es module语法，不能编译其他语法，导致无法在I
 
 ```
 
+##### 十四，SourceMap
+
+```js
+SourceMap:
+	一个用来生成源代码与构建后代码一一映射的文件的方案。
+	它会生成一个 xxx.map 文件，
+	里面包含源代码和构建后代码每一行、每一列的映射关系。
+	当构建后代码出错了，会通过 xxx.map 文件，
+	从构建后代码出错位置找到映射后源代码出错位置，
+	从而让浏览器提示源代码文件出错位置，帮助我们更快的找到错误根源。
+
+常用的两种模式：
+	cheap-module-source-map:只会映射到行，编译速度较快
+	source-map：行列都会映射，编译速度较慢
+
+devtool
+
+cosnt path = require("path")
+moduel.exports={
+	entry:"xxx.js" //入口
+    output:{
+    	path:path.resplve(__dirname,"dist")//打包出口文件
+        filename:"mian.js" //文件名
+	}，
+    module:{ //加载器
+        rules:[] 
+    }，
+    plugins:[] //插件
+	mode:""，   //模式（生产/开发）
+    devtool："" //配置sourceMap
+}
+```
+
+##### 十五，HMR
+
+```js
+HMR:
+ 在程序运行中，替换、添加或删除模块，而无需重新加载整个页面。
+ 
+module.exports = {
+  // 其他省略
+  devServer: {
+    host: "localhost", // 启动服务器域名
+    port: "3000", // 启动服务器端口号
+    open: true, // 是否自动打开浏览器
+    hot: true, // 开启HMR功能（只能用于开发环境，生产环境不需要了）
+  },
+};
+```
+
+##### 十六，oneOf
+
+```js
+只能匹配上一个 loader, 剩下的就不匹配了
+
+写法
+    const path = require("path");
+    module.exports = {
+      //入口
+      entry: "./src/main.js", //x相对路径
+      //输出
+      output: {
+        // 文件的输出路径
+        path: path.resolve(__dirname, "dist"), //绝对路径
+        // 文件名
+        filename: "static/js/main.js",
+        clean: true, //每次重新构建时清除dist文件夹
+      },
+      //加载器
+      module: {
+        rules: [
+          {
+            oneOf:[
+				{
+                    test: /\.(ttf|woff2?|eot|svg)$/,
+                    type: "asset/resource",
+                    generator: {
+                      			filename: "static/font/[hash:10][ext][query]",
+                    },
+                }
+            ]
+          },
+        ],
+      },
+      //插件
+      plugins: [],
+      //模式
+      mode: "development",
+    };
+```
+
+##### 十七，Include/Exclude
+
+```js
+include
+包含，只处理 xxx 文件
+
+exclude
+排除，除了 xxx 文件以外其他文件都处理
+
+两种只能用一种
+const path = require("path");
+const ESLintWebpackPlugin = require("eslint-webpack-plugin");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
+
+module.exports = {
+  entry: "./src/main.js",
+  output: {
+    path: undefined, // 开发模式没有输出，不需要指定输出目录
+    filename: "static/js/main.js", // 将 js 文件输出到 static/js 目录中
+    // clean: true, // 开发模式没有输出，不需要清空输出结果
+  },
+  module: {
+    rules: [
+      {
+        oneOf: [
+          {
+            // 用来匹配 .css 结尾的文件
+            test: /\.css$/,
+            // use 数组里面 Loader 执行顺序是从右到左
+            use: ["style-loader", "css-loader"],
+          },
+          {
+            test: /\.less$/,
+            use: ["style-loader", "css-loader", "less-loader"],
+          },
+          {
+            test: /\.s[ac]ss$/,
+            use: ["style-loader", "css-loader", "sass-loader"],
+          },
+          {
+            test: /\.styl$/,
+            use: ["style-loader", "css-loader", "stylus-loader"],
+          },
+          {
+            test: /\.(png|jpe?g|gif|webp)$/,
+            type: "asset",
+            parser: {
+              dataUrlCondition: {
+                maxSize: 10 * 1024, // 小于10kb的图片会被base64处理
+              },
+            },
+            generator: {
+              // 将图片文件输出到 static/imgs 目录中
+              // 将图片文件命名 [hash:8][ext][query]
+              // [hash:8]: hash值取8位
+              // [ext]: 使用之前的文件扩展名
+              // [query]: 添加之前的query参数
+              filename: "static/imgs/[hash:8][ext][query]",
+            },
+          },
+          {
+            test: /\.(ttf|woff2?)$/,
+            type: "asset/resource",
+            generator: {
+              filename: "static/media/[hash:8][ext][query]",
+            },
+          },
+          {
+            test: /\.js$/,
+            // exclude: /node_modules/, // 排除node_modules代码不编译
+            include: path.resolve(__dirname, "../src"), // 也可以用包含
+            loader: "babel-loader",
+          },
+        ],
+      },
+    ],
+  },
+  plugins: [
+    new ESLintWebpackPlugin({
+      // 指定检查文件的根目录
+      context: path.resolve(__dirname, "../src"),
+      exclude: "node_modules", // 默认值
+    }),
+    new HtmlWebpackPlugin({
+      // 以 public/index.html 为模板创建文件
+      // 新的html文件有两个特点：1. 内容和源文件一致 2. 自动引入打包生成的js等资源
+      template: path.resolve(__dirname, "../public/index.html"),
+    }),
+  ],
+  // 开发服务器
+  devServer: {
+    host: "localhost", // 启动服务器域名
+    port: "3000", // 启动服务器端口号
+    open: true, // 是否自动打开浏览器
+    hot: true, // 开启HMR功能
+  },
+  mode: "development",
+  devtool: "cheap-module-source-map",
+};
+```
+
+##### 十八，Cache
+
+```js
+对 Eslint 检查 和 Babel 编译结果进行缓存
+
+const path = require("path");
+const ESLintWebpackPlugin = require("eslint-webpack-plugin");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
+
+module.exports = {
+  entry: "./src/main.js",
+  output: {
+    path: undefined, // 开发模式没有输出，不需要指定输出目录
+    filename: "static/js/main.js", // 将 js 文件输出到 static/js 目录中
+    // clean: true, // 开发模式没有输出，不需要清空输出结果
+  },
+  module: {
+    rules: [
+      {
+        oneOf: [
+          {
+            // 用来匹配 .css 结尾的文件
+            test: /\.css$/,
+            // use 数组里面 Loader 执行顺序是从右到左
+            use: ["style-loader", "css-loader"],
+          },
+          {
+            test: /\.less$/,
+            use: ["style-loader", "css-loader", "less-loader"],
+          },
+          {
+            test: /\.s[ac]ss$/,
+            use: ["style-loader", "css-loader", "sass-loader"],
+          },
+          {
+            test: /\.styl$/,
+            use: ["style-loader", "css-loader", "stylus-loader"],
+          },
+          {
+            test: /\.(png|jpe?g|gif|webp)$/,
+            type: "asset",
+            parser: {
+              dataUrlCondition: {
+                maxSize: 10 * 1024, // 小于10kb的图片会被base64处理
+              },
+            },
+            generator: {
+              // 将图片文件输出到 static/imgs 目录中
+              // 将图片文件命名 [hash:8][ext][query]
+              // [hash:8]: hash值取8位
+              // [ext]: 使用之前的文件扩展名
+              // [query]: 添加之前的query参数
+              filename: "static/imgs/[hash:8][ext][query]",
+            },
+          },
+          {
+            test: /\.(ttf|woff2?)$/,
+            type: "asset/resource",
+            generator: {
+              filename: "static/media/[hash:8][ext][query]",
+            },
+          },
+          {
+            test: /\.js$/,
+            // exclude: /node_modules/, // 排除node_modules代码不编译
+            include: path.resolve(__dirname, "../src"), // 也可以用包含
+            loader: "babel-loader",
+            options: {
+              cacheDirectory: true, // 开启babel编译缓存
+              cacheCompression: false, // 缓存文件不要压缩
+            },
+          },
+        ],
+      },
+    ],
+  },
+  plugins: [
+    new ESLintWebpackPlugin({
+      // 指定检查文件的根目录
+      context: path.resolve(__dirname, "../src"),
+      exclude: "node_modules", // 默认值
+      cache: true, // 开启缓存
+      // 缓存目录
+      cacheLocation: path.resolve(
+        __dirname,
+        "../node_modules/.cache/.eslintcache"
+      ),
+    }),
+    new HtmlWebpackPlugin({
+      // 以 public/index.html 为模板创建文件
+      // 新的html文件有两个特点：1. 内容和源文件一致 2. 自动引入打包生成的js等资源
+      template: path.resolve(__dirname, "../public/index.html"),
+    }),
+  ],
+  // 开发服务器
+  devServer: {
+    host: "localhost", // 启动服务器域名
+    port: "3000", // 启动服务器端口号
+    open: true, // 是否自动打开浏览器
+    hot: true, // 开启HMR功能
+  },
+  mode: "development",
+  devtool: "cheap-module-source-map",
+};
+```
+
+##### 十九，多进程打包
+
+```js
+多个线程同时进行打包
+
+第一步：获取电脑的线程核数
+	const os = require("os")
+	const threads = os.cpus().length; //cpu的核数
+第二步：使用thread-loader加载器
+	安装 npm i thread-loader
+const os = require("os");
+const path = require("path");
+const ESLintWebpackPlugin = require("eslint-webpack-plugin");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
+const TerserPlugin = require("terser-webpack-plugin");
+
+// cpu核数
+const threads = os.cpus().length;
+
+// 获取处理样式的Loaders
+const getStyleLoaders = (preProcessor) => {
+  return [
+    MiniCssExtractPlugin.loader,
+    "css-loader",
+    {
+      loader: "postcss-loader",
+      options: {
+        postcssOptions: {
+          plugins: [
+            "postcss-preset-env", // 能解决大多数样式兼容性问题
+          ],
+        },
+      },
+    },
+    preProcessor,
+  ].filter(Boolean);
+};
+
+module.exports = {
+  entry: "./src/main.js",
+  output: {
+    path: path.resolve(__dirname, "../dist"), // 生产模式需要输出
+    filename: "static/js/main.js", // 将 js 文件输出到 static/js 目录中
+    clean: true,
+  },
+  module: {
+    rules: [
+      {
+        oneOf: [
+          {
+            // 用来匹配 .css 结尾的文件
+            test: /\.css$/,
+            // use 数组里面 Loader 执行顺序是从右到左
+            use: getStyleLoaders(),
+          },
+          {
+            test: /\.less$/,
+            use: getStyleLoaders("less-loader"),
+          },
+          {
+            test: /\.s[ac]ss$/,
+            use: getStyleLoaders("sass-loader"),
+          },
+          {
+            test: /\.styl$/,
+            use: getStyleLoaders("stylus-loader"),
+          },
+          {
+            test: /\.(png|jpe?g|gif|webp)$/,
+            type: "asset",
+            parser: {
+              dataUrlCondition: {
+                maxSize: 10 * 1024, // 小于10kb的图片会被base64处理
+              },
+            },
+            generator: {
+              // 将图片文件输出到 static/imgs 目录中
+              // 将图片文件命名 [hash:8][ext][query]
+              // [hash:8]: hash值取8位
+              // [ext]: 使用之前的文件扩展名
+              // [query]: 添加之前的query参数
+              filename: "static/imgs/[hash:8][ext][query]",
+            },
+          },
+          {
+            test: /\.(ttf|woff2?)$/,
+            type: "asset/resource",
+            generator: {
+              filename: "static/media/[hash:8][ext][query]",
+            },
+          },
+          {
+            test: /\.js$/,
+            // exclude: /node_modules/, // 排除node_modules代码不编译
+            include: path.resolve(__dirname, "../src"), // 也可以用包含
+            use: [
+              {
+                loader: "thread-loader", // 开启多进程
+                options: {
+                  workers: threads, // 数量
+                },
+              },
+              {
+                loader: "babel-loader",
+                options: {
+                  cacheDirectory: true, // 开启babel编译缓存
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  plugins: [
+    new ESLintWebpackPlugin({
+      // 指定检查文件的根目录
+      context: path.resolve(__dirname, "../src"),
+      exclude: "node_modules", // 默认值
+      cache: true, // 开启缓存
+      // 缓存目录
+      cacheLocation: path.resolve(
+        __dirname,
+        "../node_modules/.cache/.eslintcache"
+      ),
+      threads, // 开启多进程
+    }),
+    new HtmlWebpackPlugin({
+      // 以 public/index.html 为模板创建文件
+      // 新的html文件有两个特点：1. 内容和源文件一致 2. 自动引入打包生成的js等资源
+      template: path.resolve(__dirname, "../public/index.html"),
+    }),
+    // 提取css成单独文件
+    new MiniCssExtractPlugin({
+      // 定义输出文件名和目录
+      filename: "static/css/main.css",
+    }),
+    // css压缩
+    // new CssMinimizerPlugin(),
+  ],
+  optimization: {
+    minimize: true,
+    minimizer: [
+      // css压缩也可以写到optimization.minimizer里面，效果一样的
+      new CssMinimizerPlugin(),
+      // 当生产模式会默认开启TerserPlugin，但是我们需要进行其他配置，就要重新写了
+      new TerserPlugin({
+        parallel: threads // 开启多进程
+      })
+    ],
+  },
+  // devServer: {
+  //   host: "localhost", // 启动服务器域名
+  //   port: "3000", // 启动服务器端口号
+  //   open: true, // 是否自动打开浏览器
+  // },
+  mode: "production",
+  devtool: "source-map",
+};
+```
+
