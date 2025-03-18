@@ -1494,3 +1494,27 @@ module.exports = {
 };
 ```
 
+##### 三十五，ResizeObserver
+
+```js
+new ResizeObserver:监控指定元素实时宽高
+/*
+el：指定的元素
+callback：回调函数
+*/
+function getBodySize(el, callback) {
+  const observe = new ResizeObserver(entries => {
+    for (let entry of entries) {
+      //width:宽 height：高
+      const { width, height } = entry.contentRect;
+      callback(width, height);
+    }
+  });
+  observe.observe(el);
+  return () => {
+    //停止观察
+    observe.disconnect();
+  };
+}
+```
+

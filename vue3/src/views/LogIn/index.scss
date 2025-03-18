@@ -1,0 +1,15 @@
+.login_box {
+  width: 100vw;
+  height: 100vh;
+  background-image: url("../../assets/img/login.jpg");
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+  overflow: hidden;
+  .login_container {
+    width: rem(712);
+    height: 761px;
+    background-color: #fff;
+    margin-top: 151px;
+  }
+}

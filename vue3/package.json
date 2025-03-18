@@ -12,6 +12,7 @@
     "type-check": "vue-tsc --build"
   },
   "dependencies": {
+    "element-plus": "^2.9.6",
     "pinia": "^2.3.1",
     "sass-embedded": "^1.83.4",
     "scss": "^0.2.4",

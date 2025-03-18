@@ -2,7 +2,8 @@
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-
+import ElementPlus from 'element-plus'
+import 'element-plus/dist/index.css'
 import App from './App.vue'
 import router from './router'
 import "./index.scss"
@@ -30,6 +31,8 @@ app.directive("background",{
   // 绑定元素的父组件卸载后调用
   unmounted(el, binding, vnode) {}
 })
+
+app.use(ElementPlus)
 app.use(createPinia())
 app.use(router)
 
