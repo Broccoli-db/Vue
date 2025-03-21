@@ -1518,3 +1518,266 @@ function getBodySize(el, callback) {
 }
 ```
 
+##### 三十六，vite相关配置
+
+```js
+import path from "path";
+import { defineConfig, loadEnv } from "vite";
+import createVitePlugins from "./vite/plugins";
+
+const port = 8880; // 指定开发服务器运行的端口
+const cacheDir = ".vite_cache"; // 指定 Vite 构建缓存目录
+
+export default defineConfig(({ mode, command }) => {
+  const env = loadEnv(mode, process.cwd()); // 加载环境变量
+  const { VITE_APP_ENV } = env;
+
+  return {
+    base: VITE_APP_ENV === "production" ? "/" : "/", // 指定应用的基本路径
+    plugins: createVitePlugins(env, command === "build"), // 配置 Vite 插件
+
+    build: {
+      outDir: "zk-learning-network-ui", // 指定打包输出目录
+      assetsDir: "static", // 资源文件存放目录
+      sourcemap: VITE_APP_ENV === "development", // 仅在开发环境下生成 sourcemap
+      minify: VITE_APP_ENV === "production" ? "terser" : "esbuild", // 生产环境用 terser 压缩，开发用 esbuild 提速
+      terserOptions: {
+        compress: {
+          drop_console: VITE_APP_ENV === "production", // 生产环境移除 console
+          pure_funcs: VITE_APP_ENV === "production" ? ["console.log"] : [], // 生产环境删除 console.log
+          passes: 2, // 进行 2 次优化遍历
+        },
+        format: {
+          comments: false, // 移除所有注释
+        },
+      },
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            vendor: ["vue", "vue-router", "pinia"], // 将 Vue 相关库拆分到 vendor 包
+            lodash: ["lodash"], // lodash 单独打包
+            element: ["element-plus"], // UI 库单独打包
+          },
+          chunkFileNames: "static/js/[name]-[hash].js", // 生成的 chunk 文件命名规则
+          entryFileNames: "static/js/[name]-[hash].js", // 入口文件命名规则
+          assetFileNames: "static/[ext]/[name]-[hash].[ext]", // 资源文件命名规则
+        },
+      },
+      brotliSize: false, // 关闭 brotli 压缩计算，提高构建速度
+      chunkSizeWarningLimit: 1000, // 触发 chunk 体积警告的大小（KB）
+      cssTarget: ["chrome61", "safari13"], // 指定 CSS 兼容目标
+      cache: { dir: cacheDir }, // 指定构建缓存目录
+    },
+
+    resolve: {
+      alias: {
+        "~": path.resolve(__dirname, "./"), // 定义 "~" 为项目根目录
+        "@": path.resolve(__dirname, "./src"), // 定义 "@" 为 src 目录
+      },
+      extensions: [".mjs", ".js", ".ts", ".jsx", ".tsx", ".json", ".vue"], // 解析这些文件扩展名
+    },
+
+    css: {
+      postcss: {
+        plugins: [
+          {
+            postcssPlugin: "internal:charset-removal",
+            AtRule: {
+              charset: (atRule) => {
+                if (atRule.name === "charset") {
+                  atRule.remove();
+                }
+              },
+            },
+          },
+        ],
+      },
+      preprocessorOptions: {
+        scss: {
+          additionalData: `@use "@/main.scss" as *;`, // 预先引入全局 SCSS 文件
+        },
+      },
+    },
+
+    server: {
+      port: port, // 指定开发服务器端口
+      host: "0.0.0.0", // 允许局域网访问
+      open: true, // 启动后自动打开浏览器
+      cors: true, // 允许跨域请求
+      hmr: { overlay: false }, // 关闭热更新错误遮罩
+      watch: {
+        ignored: ["**/node_modules/**", "**/.git/**"], // 忽略某些目录的监听
+      },
+      force: true, // 强制刷新
+      proxy: {
+        "/api": {
+          target: "http://192.168.61.210:8880", // 代理 API 请求
+          changeOrigin: true, // 允许跨域
+          headers: { "Accept-Encoding": "gzip, deflate, br" }, // 设置请求头
+          rewrite: (path) => path.replace(/^\/api/, ""), // 重写路径
+          configure: (proxy, options) => {
+            proxy.on("proxyRes", (proxyRes, req, res) => {
+              proxyRes.headers["X-Frame-Options"] = "SAMEORIGIN"; // 禁止 iframe 嵌入
+              proxyRes.headers["X-XSS-Protection"] = "1; mode=block"; // 防止 XSS 攻击
+              proxyRes.headers["X-Content-Type-Options"] = "nosniff"; // 禁止 MIME 类型嗅探
+              proxyRes.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';";
+              proxyRes.headers["Referrer-Policy"] = "same-origin"; // 限制引用策略
+            });
+          },
+        },
+      },
+    },
+
+    optimizeDeps: {
+      include: ["vue", "vue-router", "pinia", "axios", "lodash"], // 预构建这些依赖
+      exclude: ["moment"], // 排除不需要预构建的依赖
+      cacheDir: cacheDir, // 依赖缓存目录
+      force: command === "serve" && VITE_APP_ENV === "development", // 仅在开发模式下强制预构建
+    },
+
+    esbuild: {
+      pure: VITE_APP_ENV === "production" ? ["console.log", "console.info", "console.warn", "console.debug"] : [], // 移除 console 语句
+      legalComments: "none", // 删除注释
+      drop: VITE_APP_ENV === "production" ? ["console"] : [], // 生产环境移除 console
+      minifyIdentifiers: true, // 缩短变量名
+      minifySyntax: true, // 简化语法
+      minifyWhitespace: true, // 移除多余空格
+    },
+
+    performance: {
+      hints: false, // 关闭性能提示
+    },
+  };
+});
+
+```
+
+##### 三十七，vite相关插件
+
+```js
+import vue from "@vitejs/plugin-vue";
+import createAutoImport from "./auto-import";
+import createComponents from "./vue-components";
+import createSvgIcon from "./svg-icon";
+import createCompression from "./compression";
+import createSetupExtend from "./setup-extend";
+import createVisualizer from "./visualizer";
+import createViteImagemin from "./viteImagemin";
+export default function createVitePlugins(viteEnv, isBuild = false) {
+  const vitePlugins = [vue()];
+  vitePlugins.push(createAutoImport());
+  vitePlugins.push(createComponents());
+  vitePlugins.push(createSetupExtend());
+  vitePlugins.push(createVisualizer());
+  vitePlugins.push(createViteImagemin());
+  vitePlugins.push(createSvgIcon(isBuild));
+  isBuild && vitePlugins.push(...createCompression(viteEnv));
+  return vitePlugins;
+}
+
+
+------------------------------------------------------------------------
+import autoImport from 'unplugin-auto-import/vite'
+import { ElementPlusResolver } from 'unplugin-vue-components/resolvers';
+
+export default function createAutoImport() {
+    return autoImport({
+        imports: ["vue", "vue-router", "pinia", "vue/macros"],
+        dts: false,
+        resolvers: [ElementPlusResolver()]
+    })
+}
+------------------------------------------------------------------------
+import compression from "vite-plugin-compression";
+export default function createCompression(env) {
+  const { VITE_BUILD_COMPRESS } = env;
+  const plugin = [];
+  if (VITE_BUILD_COMPRESS) {
+    const compressList = VITE_BUILD_COMPRESS.split(",");
+    if (compressList.includes("gzip")) {
+      plugin.push(
+        compression({
+          algorithm: "gzip",
+          ext: ".gz",
+          verbose: true, // 显示压缩日志
+        })
+      );
+    }
+    if (compressList.includes("brotli")) {
+      plugin.push(
+        compression({
+          ext: ".br",
+          algorithm: "brotliCompress",
+          deleteOriginFile: false,
+        })
+      );
+    }
+  }
+  return plugin;
+}
+------------------------------------------------------------------------
+import setupExtend from 'unplugin-vue-setup-extend-plus/vite'
+export default function createSetupExtend() {
+    return setupExtend({})
+}
+------------------------------------------------------------------------
+import { createSvgIconsPlugin } from 'vite-plugin-svg-icons'
+import path from 'path'
+
+export default function createSvgIcon(isBuild) {
+    return createSvgIconsPlugin({
+        iconDirs: [path.resolve(process.cwd(), 'src/assets/icons/svg')],
+        symbolId: 'icon-[dir]-[name]',
+        svgoOptions: isBuild
+    })
+}
+------------------------------------------------------------------------
+import { visualizer } from "rollup-plugin-visualizer";
+export default function createVisualizer() {
+  return visualizer({
+    open: false, // 打包完成后自动在浏览器中打开图表
+    gzipSize: true, // 显示文件的压缩后大小
+    brotliSize: true, // 显示 Brotli 压缩后的文件大小
+  });
+}
+------------------------------------------------------------------------
+import viteImagemin from "vite-plugin-imagemin";
+export default function createViteImagemin() {
+  return viteImagemin({
+    // 压缩 PNG
+    optipng: {
+      optimizationLevel: 5, // 1-7，值越高压缩越大但速度较慢
+    },
+    // 压缩 JPG
+    mozjpeg: {
+      quality: 80, // 质量，0-100，建议 75-85，平衡质量和体积
+    },
+    // 压缩 GIF
+    gifsicle: {
+      optimizationLevel: 3, // 1-3，值越高压缩越多
+    },
+    // 压缩 SVG
+    svgo: {
+      plugins: [
+        { name: "removeViewBox", active: false }, // 保留 viewBox 以避免缩放问题
+        { name: "removeEmptyAttrs", active: false },
+      ],
+    },
+    // 压缩 WebP
+    webp: {
+      quality: 75, // 质量 0-100
+    },
+  });
+}
+------------------------------------------------------------------------
+import Components from 'unplugin-vue-components/vite';
+import { ElementPlusResolver } from 'unplugin-vue-components/resolvers';
+export default function createComponents() {
+    return Components({
+        resolvers: [ElementPlusResolver()]
+    })
+}
+```
+
+
+
