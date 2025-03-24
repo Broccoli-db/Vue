@@ -1815,5 +1815,32 @@ export default function createComponents() {
 }
 ```
 
+##### 三十八，基于原生标签dialog封装对话框
 
+```jsx
+dialog标签：
+	获取dialog标签 调用内部方法showModal，显示对话框
+    close（），关闭对话框
+
+import React, { useRef } from "react";
+import { Button } from "antd";
+export default function Index() {
+  const dialog = useRef();
+  return (
+    <div>
+      <Button
+        onClick={() => {
+          dialog.current.showModal();
+        }}
+      >
+        Mode
+      </Button>
+      <dialog ref={dialog} id="myDialog">
+        <p>Some text in the Dialog</p>
+        <Button onClick={() => dialog.current.close()}>关闭</Button>
+      </dialog>
+    </div>
+  );
+}
+```
 
