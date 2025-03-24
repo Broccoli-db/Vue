@@ -1524,59 +1524,62 @@ function getBodySize(el, callback) {
 import path from "path";
 import { defineConfig, loadEnv } from "vite";
 import createVitePlugins from "./vite/plugins";
-
-const port = 8880; // 指定开发服务器运行的端口
-const cacheDir = ".vite_cache"; // 指定 Vite 构建缓存目录
-
+const port = 8880;
+// 缓存目录配置
+const cacheDir = ".vite_cache";
 export default defineConfig(({ mode, command }) => {
-  const env = loadEnv(mode, process.cwd()); // 加载环境变量
+  const env = loadEnv(mode, process.cwd());
   const { VITE_APP_ENV } = env;
-
   return {
-    base: VITE_APP_ENV === "production" ? "/" : "/", // 指定应用的基本路径
-    plugins: createVitePlugins(env, command === "build"), // 配置 Vite 插件
-
+    base: VITE_APP_ENV === "production" ? "/" : "/",
+    plugins: createVitePlugins(env, command === "build"),
     build: {
-      outDir: "zk-learning-network-ui", // 指定打包输出目录
-      assetsDir: "static", // 资源文件存放目录
-      sourcemap: VITE_APP_ENV === "development", // 仅在开发环境下生成 sourcemap
-      minify: VITE_APP_ENV === "production" ? "terser" : "esbuild", // 生产环境用 terser 压缩，开发用 esbuild 提速
+      outDir: "zk-learning-network-ui",
+      assetsDir: "static",
+      sourcemap: VITE_APP_ENV === "development", // 只在开发环境生成 sourcemap
+      minify: process.env.VITE_APP_ENV === "production" ? "terser" : "esbuild", // 使用 terser 来获得更好的压缩效果
       terserOptions: {
         compress: {
-          drop_console: VITE_APP_ENV === "production", // 生产环境移除 console
-          pure_funcs: VITE_APP_ENV === "production" ? ["console.log"] : [], // 生产环境删除 console.log
-          passes: 2, // 进行 2 次优化遍历
+          drop_console: VITE_APP_ENV === "production", // 生产环境下移除 console
+          pure_funcs: VITE_APP_ENV === "production" ? ["console.log"] : [],
+          passes: 2, // 优化压缩次数
         },
         format: {
-          comments: false, // 移除所有注释
+          comments: false, // 删除注释
         },
+        // parallel: true, // 启用多线程
       },
       rollupOptions: {
         output: {
           manualChunks: {
-            vendor: ["vue", "vue-router", "pinia"], // 将 Vue 相关库拆分到 vendor 包
-            lodash: ["lodash"], // lodash 单独打包
-            element: ["element-plus"], // UI 库单独打包
+            vendor: ["vue", "vue-router", "pinia"], // 第三方库分包
+            // 将大型依赖单独打包
+            lodash: ["lodash"],
+            // UI库单独打包
+            element: ["element-plus"],
           },
-          chunkFileNames: "static/js/[name]-[hash].js", // 生成的 chunk 文件命名规则
-          entryFileNames: "static/js/[name]-[hash].js", // 入口文件命名规则
-          assetFileNames: "static/[ext]/[name]-[hash].[ext]", // 资源文件命名规则
+          // 自定义 chunk 文件名
+          chunkFileNames: "static/js/[name]-[hash].js",
+          entryFileNames: "static/js/[name]-[hash].js",
+          assetFileNames: "static/[ext]/[name]-[hash].[ext]",
         },
       },
-      brotliSize: false, // 关闭 brotli 压缩计算，提高构建速度
-      chunkSizeWarningLimit: 1000, // 触发 chunk 体积警告的大小（KB）
-      cssTarget: ["chrome61", "safari13"], // 指定 CSS 兼容目标
-      cache: { dir: cacheDir }, // 指定构建缓存目录
+      // 启用 gzip 压缩
+      brotliSize: false,
+      chunkSizeWarningLimit: 1000,
+      cssTarget: ["chrome61", "safari13"],
+      // 构建缓存
+      cache: {
+        dir: cacheDir,
+      },
     },
-
     resolve: {
       alias: {
-        "~": path.resolve(__dirname, "./"), // 定义 "~" 为项目根目录
-        "@": path.resolve(__dirname, "./src"), // 定义 "@" 为 src 目录
+        "~": path.resolve(__dirname, "./"),
+        "@": path.resolve(__dirname, "./src"),
       },
-      extensions: [".mjs", ".js", ".ts", ".jsx", ".tsx", ".json", ".vue"], // 解析这些文件扩展名
+      extensions: [".mjs", ".js", ".ts", ".jsx", ".tsx", ".json", ".vue"],
     },
-
     css: {
       postcss: {
         plugins: [
@@ -1594,56 +1597,89 @@ export default defineConfig(({ mode, command }) => {
       },
       preprocessorOptions: {
         scss: {
-          additionalData: `@use "@/main.scss" as *;`, // 预先引入全局 SCSS 文件
+          additionalData: `@use "@/global.scss" as *;`,
         },
       },
     },
-
     server: {
-      port: port, // 指定开发服务器端口
-      host: "0.0.0.0", // 允许局域网访问
-      open: true, // 启动后自动打开浏览器
-      cors: true, // 允许跨域请求
-      hmr: { overlay: false }, // 关闭热更新错误遮罩
-      watch: {
-        ignored: ["**/node_modules/**", "**/.git/**"], // 忽略某些目录的监听
+      port: port,
+      host: "0.0.0.0", // 支持通过 IP 访问
+      open: true,
+      cors: true, // 启用 CORS
+      hmr: {
+        overlay: false, // 禁用热更新错误遮罩
       },
-      force: true, // 强制刷新
+      watch: {
+        ignored: [
+          "**/node_modules/**",
+          "**/.git/**",
+          "**/dist/**",
+          "**/coverage/**",
+          "**/.vscode/**",
+        ], // 忽略监听的文件
+      },
+      middlewareMode: false,
+      force: true,
+      // warmup: {
+      //   clientFiles: ["./src/main.js"], // 预热常用文件
+      // },
       proxy: {
         "/api": {
-          target: "http://192.168.61.210:8880", // 代理 API 请求
-          changeOrigin: true, // 允许跨域
-          headers: { "Accept-Encoding": "gzip, deflate, br" }, // 设置请求头
-          rewrite: (path) => path.replace(/^\/api/, ""), // 重写路径
+          target: "http://192.168.61.210:8880",
+          changeOrigin: true,
+          headers: {
+            "Accept-Encoding": "gzip, deflate, br",
+          },
+          rewrite: (path) => path.replace(/^\/api/, ""),
+          // 添加响应头配置
           configure: (proxy, options) => {
             proxy.on("proxyRes", (proxyRes, req, res) => {
-              proxyRes.headers["X-Frame-Options"] = "SAMEORIGIN"; // 禁止 iframe 嵌入
-              proxyRes.headers["X-XSS-Protection"] = "1; mode=block"; // 防止 XSS 攻击
-              proxyRes.headers["X-Content-Type-Options"] = "nosniff"; // 禁止 MIME 类型嗅探
-              proxyRes.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';";
-              proxyRes.headers["Referrer-Policy"] = "same-origin"; // 限制引用策略
+              // 禁止被iframe嵌入
+              proxyRes.headers["X-Frame-Options"] = "SAMEORIGIN";
+              // 防止XSS攻击
+              proxyRes.headers["X-XSS-Protection"] = "1; mode=block";
+              // 禁止嗅探MIME类型
+              proxyRes.headers["X-Content-Type-Options"] = "nosniff";
+              // 设置CSP策略
+              proxyRes.headers["Content-Security-Policy"] =
+                "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';";
+              // 设置引用策略
+              proxyRes.headers["Referrer-Policy"] = "same-origin";
+              // 禁止缓存敏感页面
+              // proxyRes.headers["Cache-Control"] = "no-store";
+              // 强制HTTPS
+              // proxyRes.headers["Strict-Transport-Security"] =
+              //   "max-age=31536000; includeSubDomains";
+              // 限制浏览器功能（摄像头、麦克风、地理位置等）的使用
+              // proxyRes.headers["Permissions-Policy"] =
+              //   "camera=(), microphone=(), geolocation=()";
+              // 禁止爬虫索引
+              // proxyRes.headers["X-Robots-Tag"] = "noindex, nofollow";
             });
           },
         },
       },
     },
-
     optimizeDeps: {
-      include: ["vue", "vue-router", "pinia", "axios", "lodash"], // 预构建这些依赖
+      include: ["vue", "vue-router", "pinia"], // 预构建常用依赖
       exclude: ["moment"], // 排除不需要预构建的依赖
-      cacheDir: cacheDir, // 依赖缓存目录
-      force: command === "serve" && VITE_APP_ENV === "development", // 仅在开发模式下强制预构建
+      // 缓存目录
+      cacheDir: cacheDir,
+      // 强制进行依赖预构建
+      // force: command === "serve" && VITE_APP_ENV === "development",
     },
-
     esbuild: {
-      pure: VITE_APP_ENV === "production" ? ["console.log", "console.info", "console.warn", "console.debug"] : [], // 移除 console 语句
-      legalComments: "none", // 删除注释
-      drop: VITE_APP_ENV === "production" ? ["console"] : [], // 生产环境移除 console
-      minifyIdentifiers: true, // 缩短变量名
-      minifySyntax: true, // 简化语法
-      minifyWhitespace: true, // 移除多余空格
+      pure:
+        VITE_APP_ENV === "production"
+          ? ["console.log", "console.info", "console.warn", "console.debug"]
+          : [], // 生产环境下移除 console
+      legalComments: "none", // 去除注释
+      drop: VITE_APP_ENV === "production" ? ["console"] : [],
+      minifyIdentifiers: true,
+      minifySyntax: true,
+      minifyWhitespace: true,
     },
-
+    // 性能优化配置
     performance: {
       hints: false, // 关闭性能提示
     },
